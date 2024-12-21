@@ -34,20 +34,21 @@ export default function App() {
 
       if (uri) {
         const fileName = `${Date.now()}.wav`;
+        console.log(fileName);
 
         // Otpremanje fajla na S3
         const s3Url = await uploadToS3(uri, fileName);
 
-        // if (s3Url) {
-        //   // Ekstrakcija imena fajla iz URL-a
-        //   const extractedFileName = s3Url.split("/").pop();
+        if (s3Url) {
+          // Ekstrakcija imena fajla iz URL-a
+          const extractedFileName = s3Url.split("/").pop();
 
-        //   // Slanje POST zahteva backend-u sa imenom fajla
-        //   const response = await sendFileNameToBackend(extractedFileName);
+          // Slanje POST zahteva backend-u sa imenom fajla
+          const response = await sendFileNameToBackend(extractedFileName);
 
-        //   console.log("Odgovor sa servera:", response);
-        //   alert("Procesiranje završeno:", JSON.stringify(response));
-        // }
+          console.log("Odgovor sa servera:", response);
+          alert("Procesiranje završeno:", JSON.stringify(response));
+        }
       }
     } catch (error) {
       console.error("Greška pri obradi:", error);

@@ -1,8 +1,8 @@
 import { RNS3 } from "react-native-aws3";
 
 const s3Config = {
-  bucket: "audio-files-final",
-  region: "us-west-2",
+  bucket: "",
+  region: "",
   accessKey: "",
   secretKey: "",
 };
