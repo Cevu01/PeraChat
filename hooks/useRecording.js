@@ -58,7 +58,7 @@ const useRecording = () => {
         await recordingRef.current.stopAndUnloadAsync();
         const uri = recordingRef.current.getURI();
 
-        console.log(uri);
+        alert(uri);
         setRecording(null);
         recordingRef.current = null; // Resetovanje reference
         return uri; // Vraća URI za dalju upotrebu
