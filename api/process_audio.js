@@ -9,7 +9,6 @@ export const sendFileNameToBackend = async (fileName) => {
       },
       body: JSON.stringify({ file_name: fileName }), // Slanje imena fajla
     });
-    console.log("HTTP Status Code:", response.status);
 
     if (!response.ok) {
       throw new Error(`Greška: ${response.statusText}`);
@@ -19,6 +18,6 @@ export const sendFileNameToBackend = async (fileName) => {
     console.log("Odgovor sa servera:", data);
     return data;
   } catch (error) {
-    console.error("Greška pri slanju zahteva:", error);
+    console.error("Greška pri slanju zahteva:", error.message);
   }
 };

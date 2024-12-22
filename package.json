@@ -23,6 +23,7 @@
     "expo-av": "~15.0.1",
     "expo-blur": "~14.0.1",
     "expo-constants": "~17.0.3",
+    "expo-file-system": "~18.0.6",
     "expo-font": "~13.0.2",
     "expo-haptics": "~14.0.0",
     "expo-linear-gradient": "~14.0.1",

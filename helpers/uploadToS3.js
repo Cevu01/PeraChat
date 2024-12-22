@@ -1,8 +1,8 @@
 import { RNS3 } from "react-native-aws3";
 
 const s3Config = {
-  bucket: "",
-  region: "",
+  bucket: "audio-files-final",
+  region: "us-west-2",
   accessKey: "",
   secretKey: "",
 };
@@ -30,7 +30,6 @@ export const uploadToS3 = async (uri, fileName) => {
       throw new Error("Neuspešno otpremanje na S3");
     }
     console.log(response.body.postResponse.location);
-    alert("Uspešno otpremljeno:", response.body.postResponse.location);
     return response.body.postResponse.location; // URL otpremljenog fajla
   } catch (error) {
     alert("Greška pri otpremanju na S3:", error);

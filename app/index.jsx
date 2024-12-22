@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   SafeAreaView,
@@ -13,7 +13,7 @@ import SettingsButton from "../assets/svg/SettingsButton";
 import ChatButton from "../assets/svg/ChatButton";
 import GradientBackground from "../components/GradientBackground";
 import ChatbotBox from "../components/ChatbotBox";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import RadialCircle from "../components/RadialCircle";
 import { statusColor } from "../colors";
@@ -24,17 +24,26 @@ import { sendFileNameToBackend } from "../api/process_audio";
 export default function App() {
   const [isHolding, setIsHolding] = useState(false);
   const { startRecording, stopRecording } = useRecording();
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef(null);
+  const router = useRouter();
 
   // Funkcija za otpremanje audio fajla na S3 bucket
   const handleStopRecordingAndUpload = async () => {
+    setChatHistory((prevHistory) => [
+      ...prevHistory,
+      { question: null, answer: null },
+    ]);
+    const currentQuestionIndex = chatHistory.length;
     try {
       setIsHolding(false);
+      setLoading(true);
 
       const uri = await stopRecording();
 
       if (uri) {
-        const fileName = `${Date.now()}.wav`;
-        console.log(fileName);
+        const fileName = `${Date.now()}.3gp`;
 
         // Otpremanje fajla na S3
         const s3Url = await uploadToS3(uri, fileName);
@@ -44,17 +53,32 @@ export default function App() {
           const extractedFileName = s3Url.split("/").pop();
 
           // Slanje POST zahteva backend-u sa imenom fajla
-          const response = await sendFileNameToBackend(extractedFileName);
+          const response = await sendFileNameToBackend("37.wav");
+          setChatHistory((prevHistory) => {
+            const updatedHistory = [...prevHistory];
+            updatedHistory[currentQuestionIndex] = {
+              question:
+                response?.transcription || "Transkripcija nije dostupna",
+              answer: response?.answer || "Odgovor nije dostupan",
+            };
+            return updatedHistory;
+          });
 
           console.log("Odgovor sa servera:", response);
-          alert("Procesiranje završeno:", JSON.stringify(response));
         }
       }
     } catch (error) {
       console.error("Greška pri obradi:", error);
       alert("Greška pri obradi:", error.message);
+    } finally {
+      setLoading(false);
     }
   };
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  }, [chatHistory]);
 
   return (
     <>
@@ -62,7 +86,7 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         {/* Chat history section */}
         <View style={styles.chatContainer}>
-          <ScrollView style={styles.scrollView}>
+          <ScrollView style={styles.scrollView} ref={scrollViewRef}>
             <View style={styles.botMessageContainer}>
               <View style={styles.botIconContainer}>
                 <ChatbotBox />
@@ -71,23 +95,31 @@ export default function App() {
                 Zdravo! Ja sam tvoj virtuelni asistent. Postavi mi pitanje.
               </Text>
             </View>
-
-            <GradientBackground>
-              <Text style={styles.userText}>
-                Koliko mi je ukupno zaduženje za 2024. godinu?
-              </Text>
-            </GradientBackground>
-            <View style={styles.answerContainer}>
-              <View style={styles.botIconContainer}>
-                <ChatbotBox />
+            {chatHistory.map((chat, index) => (
+              <View key={index}>
+                {!chat.answer && !chat.question && loading && (
+                  <LottieView
+                    source={require("../assets/loader.json")}
+                    autoPlay
+                    loop
+                    style={styles.loader}
+                  />
+                )}
+                {chat.question && (
+                  <GradientBackground>
+                    <Text style={styles.userText}>{chat?.question}</Text>
+                  </GradientBackground>
+                )}
+                {chat.answer && (
+                  <View style={styles.answerContainer}>
+                    <View style={styles.botIconContainer}>
+                      <ChatbotBox />
+                    </View>
+                    <Text style={styles.botText}>{chat?.answer}</Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.botText}>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam
-                nam ut quaerat laudantium repudiandae commodi, hic, aperiam
-                deserunt dolorum quasi similique necessitatibus asperiores ipsa
-                minima est incidunt officia in nemo!
-              </Text>
-            </View>
+            ))}
           </ScrollView>
         </View>
 
@@ -222,5 +254,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 10,
+  },
+  loader: {
+    width: 60,
+    height: 60,
   },
 });

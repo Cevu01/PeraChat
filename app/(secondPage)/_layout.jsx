@@ -5,7 +5,6 @@ const SecondPageLayout = () => {
   return (
     <Stack>
       <Stack.Screen name="textToSpeach" options={{ headerShown: false }} />
-      <Stack.Screen name="test" options={{ headerShown: false }} />
     </Stack>
   );
 };
