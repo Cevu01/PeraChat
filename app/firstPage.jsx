@@ -20,6 +20,7 @@ import { statusColor } from "../colors";
 import useRecording from "../hooks/useRecording";
 import { uploadToS3 } from "../helpers/uploadToS3";
 import { sendFileNameToBackend } from "../api/process_audio";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firstPage = () => {
   const [isHolding, setIsHolding] = useState(false);
@@ -30,12 +31,14 @@ const firstPage = () => {
   const router = useRouter();
 
   // Funkcija za otpremanje audio fajla na S3 bucket
+
   const handleStopRecordingAndUpload = async () => {
     setChatHistory((prevHistory) => [
       ...prevHistory,
       { question: null, answer: null },
     ]);
     const currentQuestionIndex = chatHistory.length;
+
     try {
       setIsHolding(false);
       setLoading(true);
@@ -43,7 +46,15 @@ const firstPage = () => {
       const uri = await stopRecording();
 
       if (uri) {
-        const fileName = `${Date.now()}.3gp`;
+        // Dohvatanje trenutnog brojača iz AsyncStorage
+        let fileCounter = await AsyncStorage.getItem("fileCounter");
+        fileCounter = fileCounter ? parseInt(fileCounter, 10) : 1;
+
+        // Generisanje imena fajla
+        const fileName = `${fileCounter}.3gp`;
+
+        // Ažuriranje brojača u AsyncStorage
+        await AsyncStorage.setItem("fileCounter", (fileCounter + 1).toString());
 
         // Otpremanje fajla na S3
         const s3Url = await uploadToS3(uri, fileName);
@@ -53,7 +64,7 @@ const firstPage = () => {
           const extractedFileName = s3Url.split("/").pop();
 
           // Slanje POST zahteva backend-u sa imenom fajla
-          const response = await sendFileNameToBackend("37.wav");
+          const response = await sendFileNameToBackend("30.wav");
           setChatHistory((prevHistory) => {
             const updatedHistory = [...prevHistory];
             updatedHistory[currentQuestionIndex] = {
@@ -74,6 +85,7 @@ const firstPage = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
