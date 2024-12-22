@@ -29,6 +29,17 @@ const firstPage = () => {
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef(null);
   const router = useRouter();
+  // const resetFileCounter = async () => {
+  //   try {
+  //     await AsyncStorage.setItem("fileCounter", "1");
+  //     console.log("Brojač fajlova je uspešno resetovan na 1.");
+  //   } catch (error) {
+  //     console.error("Greška prilikom resetovanja brojača:", error);
+  //   }
+  // };
+
+  // // Pozivanje funkcije za reset
+  // resetFileCounter();
 
   // Funkcija za otpremanje audio fajla na S3 bucket
 
