@@ -83,7 +83,7 @@ const TextToSpeach = () => {
       <SafeAreaView style={styles.container}>
         <TouchableOpacity
           style={styles.backButtonContainer}
-          onPress={() => router.push("/")}
+          onPress={() => router.push("/firstPage")}
         >
           <BackButton />
         </TouchableOpacity>
