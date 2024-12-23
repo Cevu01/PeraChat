@@ -6,14 +6,13 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
 } from "react-native";
 import MicButton from "../assets/svg/MicButton";
 import SettingsButton from "../assets/svg/SettingsButton";
 import ChatButton from "../assets/svg/ChatButton";
 import GradientBackground from "../components/GradientBackground";
 import ChatbotBox from "../components/ChatbotBox";
-import { router, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import RadialCircle from "../components/RadialCircle";
 import { statusColor } from "../colors";
@@ -21,6 +20,10 @@ import useRecording from "../hooks/useRecording";
 import { uploadToS3 } from "../helpers/uploadToS3";
 import { sendFileNameToBackend } from "../api/process_audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import firstPageStyles from "../styles/firstPageStyles";
+import { downloadAndPlayAudio } from "../helpers/downloadAndPlayAudio";
+import { testAudioPlayback } from "../helpers/test";
+import { playAudioFromUrl } from "../helpers/test1";
 
 const firstPage = () => {
   const [isHolding, setIsHolding] = useState(false);
@@ -29,19 +32,6 @@ const firstPage = () => {
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef(null);
   const router = useRouter();
-  // const resetFileCounter = async () => {
-  //   try {
-  //     await AsyncStorage.setItem("fileCounter", "1");
-  //     console.log("Brojač fajlova je uspešno resetovan na 1.");
-  //   } catch (error) {
-  //     console.error("Greška prilikom resetovanja brojača:", error);
-  //   }
-  // };
-
-  // // Pozivanje funkcije za reset
-  // resetFileCounter();
-
-  // Funkcija za otpremanje audio fajla na S3 bucket
 
   const handleStopRecordingAndUpload = async () => {
     setChatHistory((prevHistory) => [
@@ -75,18 +65,31 @@ const firstPage = () => {
           const extractedFileName = s3Url.split("/").pop();
 
           // Slanje POST zahteva backend-u sa imenom fajla
-          const response = await sendFileNameToBackend("30.wav");
+          const response = await sendFileNameToBackend(extractedFileName);
           setChatHistory((prevHistory) => {
             const updatedHistory = [...prevHistory];
             updatedHistory[currentQuestionIndex] = {
-              question:
-                response?.transcription || "Transkripcija nije dostupna",
-              answer: response?.answer || "Odgovor nije dostupan",
+              question: response?.transcription || "Pokusaj opet!",
+              answer: response?.answer || "Odgovor nije dostupan!",
             };
             return updatedHistory;
           });
 
           console.log("Odgovor sa servera:", response);
+          // await testAudioPlayback(
+          //   "https://archive.org/download/testmp3testfile/mpthreetest.mp3"
+          // );
+
+          // Pozovi funkciju za preuzimanje i reprodukciju
+          // if (
+          //   response?.text_to_speech_audio_bucket &&
+          //   response?.text_to_speech_audio_key
+          // ) {
+          //   await downloadAndPlayAudio(
+          //     response.text_to_speech_audio_bucket,
+          //     response.text_to_speech_audio_key
+          //   );
+          // }
         }
       }
     } catch (error) {
@@ -106,15 +109,15 @@ const firstPage = () => {
   return (
     <>
       <StatusBar backgroundColor={statusColor} barStyle="light-content" />
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={firstPageStyles.container}>
         {/* Chat history section */}
-        <View style={styles.chatContainer}>
-          <ScrollView style={styles.scrollView} ref={scrollViewRef}>
-            <View style={styles.botMessageContainer}>
-              <View style={styles.botIconContainer}>
+        <View style={firstPageStyles.chatContainer}>
+          <ScrollView style={firstPageStyles.scrollView} ref={scrollViewRef}>
+            <View style={firstPageStyles.botMessageContainer}>
+              <View style={firstPageStyles.botIconContainer}>
                 <ChatbotBox />
               </View>
-              <Text style={styles.botText}>
+              <Text style={firstPageStyles.botText}>
                 Zdravo! Ja sam tvoj virtuelni asistent. Postavi mi pitanje.
               </Text>
             </View>
@@ -125,20 +128,22 @@ const firstPage = () => {
                     source={require("../assets/loader.json")}
                     autoPlay
                     loop
-                    style={styles.loader}
+                    style={firstPageStyles.loader}
                   />
                 )}
                 {chat.question && (
                   <GradientBackground>
-                    <Text style={styles.userText}>{chat?.question}</Text>
+                    <Text style={firstPageStyles.userText}>
+                      {chat?.question}
+                    </Text>
                   </GradientBackground>
                 )}
                 {chat.answer && (
-                  <View style={styles.answerContainer}>
-                    <View style={styles.botIconContainer}>
+                  <View style={firstPageStyles.answerContainer}>
+                    <View style={firstPageStyles.botIconContainer}>
                       <ChatbotBox />
                     </View>
-                    <Text style={styles.botText}>{chat?.answer}</Text>
+                    <Text style={firstPageStyles.botText}>{chat?.answer}</Text>
                   </View>
                 )}
               </View>
@@ -147,10 +152,10 @@ const firstPage = () => {
         </View>
 
         {/* Buttons section */}
-        <View style={styles.buttonsSection}>
-          <View style={styles.buttonsRow}>
+        <View style={firstPageStyles.buttonsSection}>
+          <View style={firstPageStyles.buttonsRow}>
             {!isHolding && (
-              <TouchableOpacity>
+              <TouchableOpacity disabled={loading}>
                 <SettingsButton />
               </TouchableOpacity>
             )}
@@ -162,8 +167,9 @@ const firstPage = () => {
               }}
               onPressOut={handleStopRecordingAndUpload} // Kraj snimanja i otpremanje
               activeOpacity={1}
+              disabled={loading}
             >
-              <View style={styles.circleWrapper}>
+              <View style={firstPageStyles.circleWrapper}>
                 {isHolding && <RadialCircle />}
                 {isHolding ? (
                   <LottieView
@@ -181,6 +187,7 @@ const firstPage = () => {
             {!isHolding && (
               <TouchableOpacity
                 onPress={() => router.push("/(secondPage)/textToText")}
+                disabled={loading}
               >
                 <ChatButton />
               </TouchableOpacity>
@@ -193,95 +200,3 @@ const firstPage = () => {
 };
 
 export default firstPage;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#26262E", // bg-background-dark
-    paddingTop: 56,
-  },
-  chatContainer: {
-    flex: 1,
-    backgroundColor: "#30303B", // bg-background-light
-    paddingHorizontal: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  scrollView: {
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  botMessageContainer: {
-    marginRight: 94,
-    padding: 16,
-    backgroundColor: "#26262E", // bg-background-dark
-    borderRadius: 10,
-    marginTop: 36,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 1,
-  },
-  botIconContainer: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  botText: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.16,
-    color: "#FBFBFB", // text-text-color
-    fontFamily: "Poppins Regular",
-    flexWrap: "wrap",
-  },
-  userText: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.16,
-    color: "#FBFBFB", // text-text-color
-    fontFamily: "Poppins Regular",
-  },
-  answerContainer: {
-    marginRight: 94,
-    padding: 16,
-    backgroundColor: "#26262E", // bg-background-dark
-    borderRadius: 10,
-    marginTop: 24,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 1,
-  },
-  buttonsSection: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 20,
-  },
-  circleWrapper: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radialCircle: {
-    position: "absolute",
-    width: 300,
-    height: 300,
-    borderRadius: 115,
-    backgroundColor: "#4CB8C4",
-    shadowColor: "#3CD3AD",
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  loader: {
-    width: 60,
-    height: 60,
-  },
-});

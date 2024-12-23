@@ -17,6 +17,8 @@ import { useRouter } from "expo-router";
 import MessageInput from "../../components/MessageInput";
 import LottieView from "lottie-react-native";
 import { statusColor } from "../../colors";
+import secondPageStyles from "../../styles/secondPageStyles";
+import { processText } from "../../api/process_text";
 
 const TextToSpeach = () => {
   const [userInput, setUserInput] = useState("");
@@ -42,20 +44,7 @@ const TextToSpeach = () => {
     const currentQuestionIndex = chatHistory.length;
 
     try {
-      const res = await fetch("http://54.188.217.11:8000/process_text", {
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: userInput }),
-      });
-
-      if (!res.ok) {
-        console.log(res.status);
-      }
-
-      const data = await res.json();
+      const data = await processText(userInput);
 
       setChatHistory((prevHistory) => {
         const updatedHistory = [...prevHistory];
@@ -63,7 +52,6 @@ const TextToSpeach = () => {
         return updatedHistory;
       });
     } catch (error) {
-      console.error("Greška pri slanju poruke:", error);
       Alert.alert("Greška", "Nismo uspeli da pošaljemo poruku.");
     } finally {
       setLoading(false);
@@ -80,20 +68,20 @@ const TextToSpeach = () => {
     <>
       <StatusBar backgroundColor={statusColor} barStyle="light-content" />
 
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={secondPageStyles.container}>
         <TouchableOpacity
-          style={styles.backButtonContainer}
+          style={secondPageStyles.backButtonContainer}
           onPress={() => router.push("/firstPage")}
         >
           <BackButton />
         </TouchableOpacity>
-        <View style={styles.chatContainer}>
-          <ScrollView style={styles.scrollView} ref={scrollViewRef}>
-            <View style={styles.botMessageContainer}>
-              <View style={styles.botIconContainer}>
+        <View style={secondPageStyles.chatContainer}>
+          <ScrollView style={secondPageStyles.scrollView} ref={scrollViewRef}>
+            <View style={secondPageStyles.botMessageContainer}>
+              <View style={secondPageStyles.botIconContainer}>
                 <ChatbotBox />
               </View>
-              <Text style={styles.botText}>
+              <Text style={secondPageStyles.botText}>
                 Zdravo! Ja sam tvoj virtuelni asistent. Postavi mi pitanje.
               </Text>
             </View>
@@ -101,22 +89,22 @@ const TextToSpeach = () => {
             {chatHistory.map((chat, index) => (
               <View key={index}>
                 <GradientBackground>
-                  <Text style={styles.userText}>{chat.question}</Text>
+                  <Text style={secondPageStyles.userText}>{chat.question}</Text>
                 </GradientBackground>
                 {!chat.answer && loading && (
                   <LottieView
                     source={require("../../assets/loader.json")}
                     autoPlay
                     loop
-                    style={styles.loader}
+                    style={secondPageStyles.loader}
                   />
                 )}
                 {chat.answer && (
-                  <View style={styles.answerContainer}>
-                    <View style={styles.botIconContainer}>
+                  <View style={secondPageStyles.answerContainer}>
+                    <View style={secondPageStyles.botIconContainer}>
                       <ChatbotBox />
                     </View>
-                    <Text style={styles.botText}>{chat.answer}</Text>
+                    <Text style={secondPageStyles.botText}>{chat.answer}</Text>
                   </View>
                 )}
               </View>
@@ -134,78 +122,5 @@ const TextToSpeach = () => {
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#26262E", // bg-background-dark
-    paddingTop: 56,
-  },
-  backButtonContainer: {
-    position: "absolute",
-    top: 75,
-    left: 6,
-    zIndex: 10,
-  },
-  chatContainer: {
-    flex: 1,
-    paddingTop: 80,
-    backgroundColor: "#30303B", // bg-background-light
-    paddingHorizontal: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  scrollView: {
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  botMessageContainer: {
-    marginRight: 94,
-    padding: 16,
-    marginBottom: 24,
-    backgroundColor: "#26262E", // bg-background-dark
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 1,
-  },
-  botIconContainer: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  botText: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.16,
-    color: "#FBFBFB", // text-text-color
-    fontFamily: "Poppins Regular",
-    flexWrap: "wrap",
-  },
-  userText: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.16,
-    color: "#FBFBFB", // text-text-color
-    fontFamily: "Poppins Regular",
-  },
-  loader: {
-    width: 60,
-    height: 60,
-  },
-  answerContainer: {
-    marginRight: 94,
-    padding: 16,
-    backgroundColor: "#26262E", // bg-background-dark
-    borderRadius: 10,
-    marginTop: 24,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 1,
-  },
-});
 
 export default TextToSpeach;

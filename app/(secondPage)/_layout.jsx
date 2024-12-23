@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 
 const SecondPageLayout = () => {
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="textToText" options={{ headerShown: false }} />
     </Stack>
   );

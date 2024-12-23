@@ -12,7 +12,7 @@ export const uploadToS3 = async (uri, fileName) => {
     const file = {
       uri,
       name: fileName,
-      type: "audio/wav",
+      type: "audio/3gpp",
     };
 
     const options = {
@@ -29,7 +29,7 @@ export const uploadToS3 = async (uri, fileName) => {
     if (response.status !== 201) {
       throw new Error("Neuspešno otpremanje na S3");
     }
-    console.log(response.body.postResponse.location);
+    console.log("Primer", response.body.postResponse.location);
     return response.body.postResponse.location; // URL otpremljenog fajla
   } catch (error) {
     alert("Greška pri otpremanju na S3:", error);
