@@ -21,9 +21,7 @@ import { uploadToS3 } from "../helpers/uploadToS3";
 import { sendFileNameToBackend } from "../api/process_audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import firstPageStyles from "../styles/firstPageStyles";
-import { downloadAndPlayAudio } from "../helpers/downloadAndPlayAudio";
-import { testAudioPlayback } from "../helpers/test";
-import { playAudioFromUrl } from "../helpers/test1";
+import { playAudio } from "../helpers/playAudio";
 
 const firstPage = () => {
   const [isHolding, setIsHolding] = useState(false);
@@ -32,6 +30,18 @@ const firstPage = () => {
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef(null);
   const router = useRouter();
+
+  const resetFileCounter = async () => {
+    try {
+      await AsyncStorage.setItem("fileCounter", "1");
+      console.log("Brojač uspešno resetovan na 1.");
+    } catch (error) {
+      console.error("Greška pri resetovanju brojača:", error.message);
+    }
+  };
+
+  // Odmah pozivamo funkciju
+  resetFileCounter();
 
   const handleStopRecordingAndUpload = async () => {
     setChatHistory((prevHistory) => [
@@ -65,31 +75,27 @@ const firstPage = () => {
           const extractedFileName = s3Url.split("/").pop();
 
           // Slanje POST zahteva backend-u sa imenom fajla
-          const response = await sendFileNameToBackend(extractedFileName);
-          setChatHistory((prevHistory) => {
-            const updatedHistory = [...prevHistory];
-            updatedHistory[currentQuestionIndex] = {
-              question: response?.transcription || "Pokusaj opet!",
-              answer: response?.answer || "Odgovor nije dostupan!",
-            };
-            return updatedHistory;
-          });
+          // const response = await sendFileNameToBackend(extractedFileName);
+          const downloadedFileUri = await sendFileNameToBackend(
+            extractedFileName
+          );
+          if (downloadedFileUri) {
+            console.log(
+              "Audio fajl je spreman za reprodukciju:",
+              downloadedFileUri
+            );
 
-          console.log("Odgovor sa servera:", response);
-          // await testAudioPlayback(
-          //   "https://archive.org/download/testmp3testfile/mpthreetest.mp3"
-          // );
-
-          // Pozovi funkciju za preuzimanje i reprodukciju
-          // if (
-          //   response?.text_to_speech_audio_bucket &&
-          //   response?.text_to_speech_audio_key
-          // ) {
-          //   await downloadAndPlayAudio(
-          //     response.text_to_speech_audio_bucket,
-          //     response.text_to_speech_audio_key
-          //   );
-          // }
+            // Direktna reprodukcija preuzetog fajla
+            await playAudio(downloadedFileUri);
+          }
+          // setChatHistory((prevHistory) => {
+          //   const updatedHistory = [...prevHistory];
+          //   updatedHistory[currentQuestionIndex] = {
+          //     question: response?.transcription || "Pokusaj opet!",
+          //     answer: response?.answer || "Odgovor nije dostupan!",
+          //   };
+          //   return updatedHistory;
+          // });
         }
       }
     } catch (error) {
