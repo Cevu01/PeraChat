@@ -31,18 +31,7 @@ const firstPage = () => {
   const scrollViewRef = useRef(null);
   const router = useRouter();
 
-  const resetFileCounter = async () => {
-    try {
-      await AsyncStorage.setItem("fileCounter", "1");
-      console.log("Brojač uspešno resetovan na 1.");
-    } catch (error) {
-      console.error("Greška pri resetovanju brojača:", error.message);
-    }
-  };
-
-  // Odmah pozivamo funkciju
-  resetFileCounter();
-
+  // Funkcija za zaustavljanje snimanja i obradu
   const handleStopRecordingAndUpload = async () => {
     setChatHistory((prevHistory) => [
       ...prevHistory,
@@ -57,49 +46,36 @@ const firstPage = () => {
       const uri = await stopRecording();
 
       if (uri) {
-        // Dohvatanje trenutnog brojača iz AsyncStorage
         let fileCounter = await AsyncStorage.getItem("fileCounter");
         fileCounter = fileCounter ? parseInt(fileCounter, 10) : 1;
 
-        // Generisanje imena fajla
         const fileName = `${fileCounter}.3gp`;
-
-        // Ažuriranje brojača u AsyncStorage
         await AsyncStorage.setItem("fileCounter", (fileCounter + 1).toString());
 
-        // Otpremanje fajla na S3
         const s3Url = await uploadToS3(uri, fileName);
 
         if (s3Url) {
-          // Ekstrakcija imena fajla iz URL-a
           const extractedFileName = s3Url.split("/").pop();
+          const { transcription, answer, audioFileUri } =
+            await sendFileNameToBackend(extractedFileName);
 
-          // Slanje POST zahteva backend-u sa imenom fajla
-          // const response = await sendFileNameToBackend(extractedFileName);
-          const downloadedFileUri = await sendFileNameToBackend(
-            extractedFileName
-          );
-          if (downloadedFileUri) {
-            console.log(
-              "Audio fajl je spreman za reprodukciju:",
-              downloadedFileUri
-            );
+          // Ažuriranje chat istorije
+          setChatHistory((prevHistory) => {
+            const updatedHistory = [...prevHistory];
+            updatedHistory[currentQuestionIndex] = {
+              question: transcription || "Pokušaj opet!",
+              answer: answer || "Odgovor nije dostupan!",
+            };
+            return updatedHistory;
+          });
 
-            // Direktna reprodukcija preuzetog fajla
-            await playAudio(downloadedFileUri);
+          // Odmah pusti audio fajl nakon što se prikaže tekst
+          if (audioFileUri) {
+            await playAudio(audioFileUri);
           }
-          // setChatHistory((prevHistory) => {
-          //   const updatedHistory = [...prevHistory];
-          //   updatedHistory[currentQuestionIndex] = {
-          //     question: response?.transcription || "Pokusaj opet!",
-          //     answer: response?.answer || "Odgovor nije dostupan!",
-          //   };
-          //   return updatedHistory;
-          // });
         }
       }
     } catch (error) {
-      console.error("Greška pri obradi:", error);
       alert("Greška pri obradi:", error.message);
     } finally {
       setLoading(false);

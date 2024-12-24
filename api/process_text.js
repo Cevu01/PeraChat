@@ -10,14 +10,13 @@ export const processText = async (text) => {
     });
 
     if (!response.ok) {
-      console.error("HTTP greška:", response.status);
       throw new Error(`HTTP greška: ${response.status}`);
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Greška pri fetchovanju:", error);
+    alert("Greška pri fetchovanju:", error);
     throw error; // Propagiranje greške za obradu u komponenti
   }
 };
