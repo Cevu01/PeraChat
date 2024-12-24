@@ -28,10 +28,16 @@ const TextToSpeach = () => {
   const router = useRouter();
 
   const handleSendMessage = async () => {
+    console.log("Početak slanja poruke...");
+
     if (!userInput.trim()) {
       Alert.alert("Greška", "Molimo unesite tekst!");
+      console.log("Prazan unos. Poruka nije poslata.");
       return;
     }
+
+    console.log("Unos korisnika:", userInput);
+
     setUserInput("");
     setLoading(true);
     Keyboard.dismiss();
@@ -40,21 +46,31 @@ const TextToSpeach = () => {
       ...prevHistory,
       { question: userInput, answer: null },
     ]);
+    console.log(
+      "Dodato pitanje u chat istoriju. Trenutna istorija:",
+      chatHistory
+    );
 
     const currentQuestionIndex = chatHistory.length;
+    console.log("Indeks trenutnog pitanja u istoriji:", currentQuestionIndex);
 
     try {
+      console.log("Pozivanje funkcije processText sa unosom:", userInput);
       const data = await processText(userInput);
+      console.log("Odgovor sa backend-a:", data);
 
       setChatHistory((prevHistory) => {
         const updatedHistory = [...prevHistory];
         updatedHistory[currentQuestionIndex].answer = data.answer;
+        console.log("Ažurirana chat istorija:", updatedHistory);
         return updatedHistory;
       });
     } catch (error) {
+      console.error("Greška pri slanju poruke:", error.message);
       Alert.alert("Greška", "Nismo uspeli da pošaljemo poruku.");
     } finally {
       setLoading(false);
+      console.log("Slanje poruke završeno.");
     }
   };
 

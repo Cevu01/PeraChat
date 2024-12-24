@@ -31,78 +31,72 @@ const firstPage = () => {
   const scrollViewRef = useRef(null);
   const router = useRouter();
 
-  const resetFileCounter = async () => {
-    try {
-      await AsyncStorage.setItem("fileCounter", "1");
-      console.log("Brojač uspešno resetovan na 1.");
-    } catch (error) {
-      console.error("Greška pri resetovanju brojača:", error.message);
-    }
-  };
-
-  // Odmah pozivamo funkciju
-  resetFileCounter();
-
+  // Funkcija za zaustavljanje snimanja i obradu
   const handleStopRecordingAndUpload = async () => {
+    console.log("Početak zaustavljanja snimanja i uploada...");
+
     setChatHistory((prevHistory) => [
       ...prevHistory,
       { question: null, answer: null },
     ]);
     const currentQuestionIndex = chatHistory.length;
+    console.log("Trenutni indeks pitanja u istoriji:", currentQuestionIndex);
 
     try {
       setIsHolding(false);
       setLoading(true);
 
       const uri = await stopRecording();
+      console.log("URI snimljenog fajla:", uri);
 
       if (uri) {
-        // Dohvatanje trenutnog brojača iz AsyncStorage
         let fileCounter = await AsyncStorage.getItem("fileCounter");
         fileCounter = fileCounter ? parseInt(fileCounter, 10) : 1;
+        console.log("Broj snimljenih fajlova:", fileCounter);
 
-        // Generisanje imena fajla
         const fileName = `${fileCounter}.3gp`;
-
-        // Ažuriranje brojača u AsyncStorage
         await AsyncStorage.setItem("fileCounter", (fileCounter + 1).toString());
+        console.log("Kreirano ime fajla za upload:", fileName);
 
-        // Otpremanje fajla na S3
         const s3Url = await uploadToS3(uri, fileName);
+        console.log("URL fajla na S3:", s3Url);
 
         if (s3Url) {
-          // Ekstrakcija imena fajla iz URL-a
           const extractedFileName = s3Url.split("/").pop();
+          console.log("Ekstrahovano ime fajla sa S3:", extractedFileName);
 
-          // Slanje POST zahteva backend-u sa imenom fajla
-          // const response = await sendFileNameToBackend(extractedFileName);
-          const downloadedFileUri = await sendFileNameToBackend(
-            extractedFileName
-          );
-          if (downloadedFileUri) {
-            console.log(
-              "Audio fajl je spreman za reprodukciju:",
-              downloadedFileUri
-            );
+          const { transcription, answer, audioFileUri } =
+            await sendFileNameToBackend(extractedFileName);
+          console.log("Odgovor sa backend-a:", {
+            transcription,
+            answer,
+            audioFileUri,
+          });
 
-            // Direktna reprodukcija preuzetog fajla
-            await playAudio(downloadedFileUri);
+          // Ažuriranje chat istorije
+          setChatHistory((prevHistory) => {
+            const updatedHistory = [...prevHistory];
+            updatedHistory[currentQuestionIndex] = {
+              question: transcription || "Pokušaj opet!",
+              answer: answer || "Odgovor nije dostupan!",
+            };
+            console.log("Ažurirana chat istorija:", updatedHistory);
+            return updatedHistory;
+          });
+
+          // Odmah pusti audio fajl nakon što se prikaže tekst
+          if (audioFileUri) {
+            console.log("Reprodukcija audio fajla sa URI-jem:", audioFileUri);
+            await playAudio(audioFileUri);
           }
-          // setChatHistory((prevHistory) => {
-          //   const updatedHistory = [...prevHistory];
-          //   updatedHistory[currentQuestionIndex] = {
-          //     question: response?.transcription || "Pokusaj opet!",
-          //     answer: response?.answer || "Odgovor nije dostupan!",
-          //   };
-          //   return updatedHistory;
-          // });
         }
       }
     } catch (error) {
-      console.error("Greška pri obradi:", error);
+      console.error("Greška pri obradi:", error.message);
       alert("Greška pri obradi:", error.message);
     } finally {
       setLoading(false);
+      console.log("Proces zaustavljanja snimanja i uploada završen.");
     }
   };
 

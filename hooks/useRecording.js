@@ -17,7 +17,7 @@ const useRecording = () => {
       await recordingInstance.startAsync();
       setRecording(recordingInstance);
     } catch (error) {
-      console.error("Greška pri započinjanju snimanja:", error);
+      alert("Greška pri započinjanju snimanja:", error);
     }
   };
 
@@ -30,10 +30,9 @@ const useRecording = () => {
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-      console.log("Snimljeni fajl:", uri);
       return uri;
     } catch (error) {
-      console.error("Greška pri zaustavljanju snimanja:", error);
+      alert("Greška pri zaustavljanju snimanja:", error);
     }
   };
 

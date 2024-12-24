@@ -4,7 +4,7 @@
     "slug": "PeraChat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/logo.png",
     "scheme": "perachat",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,22 +14,35 @@
         "NSMicrophoneUsageDescription": "Potrebna dozvola za snimanje zvuka."
       }
     },
+    "splash": {
+      "image": "./assets/logo.png"
+    },
     "android": {
       "adaptiveIcon": {},
       "permissions": [
         "RECORD_AUDIO",
         "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE"
-      ]
+      ],
+      "package": "com.cevu01.PeraChat"
     },
-
     "web": {
       "bundler": "metro",
       "output": "static"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router"
+    ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "6c82e610-b5b4-4a54-b477-4361def83f70"
+      }
     }
   }
 }
