@@ -1,15 +1,23 @@
-export const processText = async (text) => {
-  console.log("Zapoceto slanje zahteva ka API-ju sa tekstom:", text); // Log pre fetch-a
+export const processText = async (text, collectionName) => {
+  console.log(
+    "Zapoceto slanje zahteva ka API-ju sa tekstom:",
+    text,
+    "i kolekcijom:",
+    collectionName
+  ); // Log pre fetch-a
 
   try {
-    const response = await fetch("http://54.188.217.11:8000/process_text", {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    });
+    const response = await fetch(
+      "https://x4661ug1wj.execute-api.us-west-2.amazonaws.com/process_text",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text, collection_name: collectionName }), // Slanje oba parametra
+      }
+    );
 
     console.log("HTTP status kod odgovora:", response.status); // Log statusa odgovora
 

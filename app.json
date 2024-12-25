@@ -17,6 +17,10 @@
     "splash": {
       "image": "./assets/logo.png"
     },
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    },
     "android": {
       "adaptiveIcon": {},
       "permissions": [
@@ -30,9 +34,7 @@
       "bundler": "metro",
       "output": "static"
     },
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
     },

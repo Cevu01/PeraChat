@@ -8,13 +8,16 @@ export const sendFileNameToBackend = async (fileName) => {
   try {
     // Prvi POST zahtev na backend za obradu audio fajla
     console.log("Slanje POST zahteva na /process_audio sa fajlom:", fileName);
-    const response = await fetch("http://54.188.217.11:8000/process_audio", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ file_name: fileName }),
-    });
+    const response = await fetch(
+      "https://x4661ug1wj.execute-api.us-west-2.amazonaws.com/process_audio",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ file_name: fileName }),
+      }
+    );
 
     console.log("Status odgovora prvog zahteva:", response.status); // Log statusa
     if (!response.ok) {
@@ -33,7 +36,7 @@ export const sendFileNameToBackend = async (fileName) => {
       { text: answer || "Prazan odgovor", file_name: fileName }
     );
     const secondResponse = await fetch(
-      "http://54.188.217.11:8000/convert_text_to_audio",
+      "https://x4661ug1wj.execute-api.us-west-2.amazonaws.com/convert_text_to_audio",
       {
         method: "POST",
         headers: {

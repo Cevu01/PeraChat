@@ -54,9 +54,13 @@ const TextToSpeach = () => {
     const currentQuestionIndex = chatHistory.length;
     console.log("Indeks trenutnog pitanja u istoriji:", currentQuestionIndex);
 
+    const collectionName = "main-app"; // Dodajte naziv kolekcije
+
     try {
-      console.log("Pozivanje funkcije processText sa unosom:", userInput);
-      const data = await processText(userInput);
+      console.log(
+        `Pozivanje funkcije processText sa unosom: "${userInput}" i kolekcijom: "${collectionName}"`
+      );
+      const data = await processText(userInput, collectionName); // Prosleđivanje oba parametra
       console.log("Odgovor sa backend-a:", data);
 
       setChatHistory((prevHistory) => {
