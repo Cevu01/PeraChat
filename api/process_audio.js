@@ -1,13 +1,10 @@
 import { Buffer } from "buffer";
 import * as FileSystem from "expo-file-system";
+import { Alert } from "react-native";
 
-// Postavljanje Buffer-a u globalni kontekst
-export const sendFileNameToBackend = async (fileName) => {
-  console.log("Započeta obrada za fajl:", fileName); // Log početka funkcije
-
+export const sendFileNameToBackend = async (fileName, collectionName) => {
   try {
     // Prvi POST zahtev na backend za obradu audio fajla
-    console.log("Slanje POST zahteva na /process_audio sa fajlom:", fileName);
     const response = await fetch(
       "https://x4661ug1wj.execute-api.us-west-2.amazonaws.com/process_audio",
       {
@@ -15,26 +12,24 @@ export const sendFileNameToBackend = async (fileName) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ file_name: fileName }),
+        body: JSON.stringify({
+          file_name: fileName,
+          collection_name: collectionName,
+        }),
       }
     );
 
-    console.log("Status odgovora prvog zahteva:", response.status); // Log statusa
     if (!response.ok) {
-      console.error("Greška kod /process_audio:", response.statusText);
-      throw new Error(`Greška: ${response.statusText}`);
+      const errorMessage = `Greška kod /process_audio: ${response.statusText}`;
+      Alert.alert("Greška", errorMessage); // Alert za grešku
+      throw new Error(errorMessage);
     }
 
     // Parsiranje JSON odgovora
     const jsonResponse = await response.json();
-    console.log("Odgovor sa /process_audio:", jsonResponse); // Log odgovora
     const { transcription, answer } = jsonResponse;
 
     // Drugi POST zahtev ka drugom endpointu
-    console.log(
-      "Slanje POST zahteva na /convert_text_to_audio sa odgovorom i fajlom:",
-      { text: answer || "Prazan odgovor", file_name: fileName }
-    );
     const secondResponse = await fetch(
       "https://x4661ug1wj.execute-api.us-west-2.amazonaws.com/convert_text_to_audio",
       {
@@ -49,35 +44,25 @@ export const sendFileNameToBackend = async (fileName) => {
       }
     );
 
-    console.log("Status odgovora drugog zahteva:", secondResponse.status); // Log statusa
     if (!secondResponse.ok) {
-      console.error(
-        "Greška kod /convert_text_to_audio:",
-        secondResponse.statusText
-      );
-      throw new Error(
-        `Greška kod drugog endpointa: ${secondResponse.statusText}`
-      );
+      const errorMessage = `Greška kod /convert_text_to_audio: ${secondResponse.statusText}`;
+      Alert.alert("Greška", errorMessage); // Alert za grešku
+      throw new Error(errorMessage);
     }
 
     // Dohvatanje binarnih podataka iz drugog endpointa
-    console.log("Preuzimanje binarnih podataka sa /convert_text_to_audio...");
     const arrayBuffer = await secondResponse.arrayBuffer();
 
     // Konvertovanje binarnih podataka u Base64
-    console.log("Konvertovanje binarnih podataka u Base64...");
     const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
     // Generisanje putanje za audio fajl
     const audioFileUri = `${FileSystem.documentDirectory}${fileName}_answer.mp3`;
-    console.log("Generisana putanja za audio fajl:", audioFileUri);
 
     // Sačuvaj audio fajl na uređaju
-    console.log("Čuvanje audio fajla na uređaju...");
     await FileSystem.writeAsStringAsync(audioFileUri, base64Audio, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    console.log("Audio fajl uspešno sačuvan:", audioFileUri);
 
     // Povratak podataka
     return {
@@ -86,7 +71,8 @@ export const sendFileNameToBackend = async (fileName) => {
       audioFileUri,
     };
   } catch (error) {
-    console.error("Greška tokom obrade:", error.message); // Log greške
+    // Alert za hvatanje grešaka tokom procesa
+    Alert.alert("Greška", error.message || "Došlo je do greške tokom obrade.");
     throw error;
   }
 };

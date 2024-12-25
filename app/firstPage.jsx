@@ -22,81 +22,93 @@ import { sendFileNameToBackend } from "../api/process_audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import firstPageStyles from "../styles/firstPageStyles";
 import { playAudio } from "../helpers/playAudio";
+import ModalComponent from "../components/ModalComponent";
 
 const firstPage = () => {
   const [isHolding, setIsHolding] = useState(false);
   const { startRecording, stopRecording } = useRecording();
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false); // State za modal
   const scrollViewRef = useRef(null);
   const router = useRouter();
 
-  // Funkcija za zaustavljanje snimanja i obradu
-  const handleStopRecordingAndUpload = async () => {
-    console.log("Početak zaustavljanja snimanja i uploada...");
+  const toggleModal = () => {
+    setIsModalVisible((prev) => !prev); // Otvara ili zatvara modal
+  };
 
+  const handleStopRecordingAndUpload = async () => {
     setChatHistory((prevHistory) => [
       ...prevHistory,
       { question: null, answer: null },
     ]);
+
     const currentQuestionIndex = chatHistory.length;
-    console.log("Trenutni indeks pitanja u istoriji:", currentQuestionIndex);
+    const collectionName = "Dental"; // Dodajte naziv kolekcije
 
     try {
       setIsHolding(false);
       setLoading(true);
 
       const uri = await stopRecording();
-      console.log("URI snimljenog fajla:", uri);
+      if (!uri) {
+        alert("Greška", "Snimanje nije uspelo. Pokušajte ponovo.");
+        return;
+      }
 
-      if (uri) {
-        let fileCounter = await AsyncStorage.getItem("fileCounter");
-        fileCounter = fileCounter ? parseInt(fileCounter, 10) : 1;
-        console.log("Broj snimljenih fajlova:", fileCounter);
+      let fileCounter = await AsyncStorage.getItem("fileCounter");
+      fileCounter = fileCounter ? parseInt(fileCounter, 10) : 1;
 
-        const fileName = `${fileCounter}.3gp`;
-        await AsyncStorage.setItem("fileCounter", (fileCounter + 1).toString());
-        console.log("Kreirano ime fajla za upload:", fileName);
+      const fileName = `${fileCounter}.3gp`;
+      await AsyncStorage.setItem("fileCounter", (fileCounter + 1).toString());
 
-        const s3Url = await uploadToS3(uri, fileName);
-        console.log("URL fajla na S3:", s3Url);
+      const s3Url = await uploadToS3(uri, fileName);
+      if (!s3Url) {
+        alert("Greška", "Otpremanje fajla na server nije uspelo.");
+        return;
+      }
 
-        if (s3Url) {
-          const extractedFileName = s3Url.split("/").pop();
-          console.log("Ekstrahovano ime fajla sa S3:", extractedFileName);
+      const extractedFileName = s3Url.split("/").pop();
 
-          const { transcription, answer, audioFileUri } =
-            await sendFileNameToBackend(extractedFileName);
-          console.log("Odgovor sa backend-a:", {
-            transcription,
-            answer,
-            audioFileUri,
-          });
+      const { transcription, answer, audioFileUri } =
+        await sendFileNameToBackend(extractedFileName, collectionName);
 
-          // Ažuriranje chat istorije
-          setChatHistory((prevHistory) => {
-            const updatedHistory = [...prevHistory];
-            updatedHistory[currentQuestionIndex] = {
-              question: transcription || "Pokušaj opet!",
-              answer: answer || "Odgovor nije dostupan!",
-            };
-            console.log("Ažurirana chat istorija:", updatedHistory);
-            return updatedHistory;
-          });
+      if (!transcription || !answer) {
+        alert(
+          "Greška",
+          "Nismo uspeli da dobijemo transkripciju ili odgovor. Pokušajte ponovo."
+        );
+        return;
+      }
 
-          // Odmah pusti audio fajl nakon što se prikaže tekst
-          if (audioFileUri) {
-            console.log("Reprodukcija audio fajla sa URI-jem:", audioFileUri);
-            await playAudio(audioFileUri);
-          }
+      // Ažuriranje chat istorije
+      setChatHistory((prevHistory) => {
+        const updatedHistory = [...prevHistory];
+        updatedHistory[currentQuestionIndex] = {
+          question: transcription || "Pokušaj opet!",
+          answer: answer || "Odgovor nije dostupan!",
+        };
+        return updatedHistory;
+      });
+
+      // Odmah pusti audio fajl nakon što se prikaže tekst
+      if (audioFileUri) {
+        try {
+          await playAudio(audioFileUri);
+        } catch (playError) {
+          alert(
+            "Greška",
+            "Došlo je do problema sa reprodukcijom audio fajla. Pokušajte ponovo."
+          );
         }
       }
     } catch (error) {
-      console.error("Greška pri obradi:", error.message);
-      alert("Greška pri obradi:", error.message);
+      alert(
+        "Greška pri obradi",
+        error.message || "Došlo je do nepoznate greške."
+      );
     } finally {
       setLoading(false);
-      console.log("Proces zaustavljanja snimanja i uploada završen.");
     }
   };
 
@@ -151,11 +163,17 @@ const firstPage = () => {
           </ScrollView>
         </View>
 
+        {/* Modal */}
+        <ModalComponent
+          visible={isModalVisible}
+          onClose={toggleModal}
+        ></ModalComponent>
+
         {/* Buttons section */}
         <View style={firstPageStyles.buttonsSection}>
           <View style={firstPageStyles.buttonsRow}>
             {!isHolding && (
-              <TouchableOpacity disabled={loading}>
+              <TouchableOpacity onPress={toggleModal} disabled={loading}>
                 <SettingsButton />
               </TouchableOpacity>
             )}

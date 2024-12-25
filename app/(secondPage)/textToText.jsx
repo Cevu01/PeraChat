@@ -8,7 +8,6 @@ import {
   ScrollView,
   Alert,
   Keyboard,
-  StyleSheet,
 } from "react-native";
 import GradientBackground from "../../components/GradientBackground";
 import ChatbotBox from "../../components/ChatbotBox";
@@ -28,15 +27,10 @@ const TextToSpeach = () => {
   const router = useRouter();
 
   const handleSendMessage = async () => {
-    console.log("Početak slanja poruke...");
-
     if (!userInput.trim()) {
-      Alert.alert("Greška", "Molimo unesite tekst!");
-      console.log("Prazan unos. Poruka nije poslata.");
+      Alert.alert("Greška", "Molimo unesite tekst!"); // Alert za prazan unos
       return;
     }
-
-    console.log("Unos korisnika:", userInput);
 
     setUserInput("");
     setLoading(true);
@@ -46,35 +40,36 @@ const TextToSpeach = () => {
       ...prevHistory,
       { question: userInput, answer: null },
     ]);
-    console.log(
-      "Dodato pitanje u chat istoriju. Trenutna istorija:",
-      chatHistory
-    );
 
     const currentQuestionIndex = chatHistory.length;
-    console.log("Indeks trenutnog pitanja u istoriji:", currentQuestionIndex);
-
-    const collectionName = "main-app"; // Dodajte naziv kolekcije
+    const collectionName = "Dental"; // Dodajte naziv kolekcije
 
     try {
-      console.log(
-        `Pozivanje funkcije processText sa unosom: "${userInput}" i kolekcijom: "${collectionName}"`
-      );
+      // Slanje poruke na backend
       const data = await processText(userInput, collectionName); // Prosleđivanje oba parametra
-      console.log("Odgovor sa backend-a:", data);
 
+      if (!data || !data.answer) {
+        Alert.alert(
+          "Greška",
+          "Nismo dobili odgovor sa servera. Pokušajte ponovo."
+        );
+        return;
+      }
+
+      // Ažuriranje chat istorije sa dobijenim odgovorom
       setChatHistory((prevHistory) => {
         const updatedHistory = [...prevHistory];
         updatedHistory[currentQuestionIndex].answer = data.answer;
-        console.log("Ažurirana chat istorija:", updatedHistory);
         return updatedHistory;
       });
     } catch (error) {
-      console.error("Greška pri slanju poruke:", error.message);
-      Alert.alert("Greška", "Nismo uspeli da pošaljemo poruku.");
+      // Alert za grešku tokom procesa
+      Alert.alert(
+        "Greška",
+        error.message || "Nismo uspeli da pošaljemo poruku. Pokušajte ponovo."
+      );
     } finally {
-      setLoading(false);
-      console.log("Slanje poruke završeno.");
+      setLoading(false); // Reset loading stanja
     }
   };
 
