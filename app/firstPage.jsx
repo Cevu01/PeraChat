@@ -30,11 +30,16 @@ const firstPage = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false); // State za modal
+  const [collectionName, setCollectionName] = useState("Dental"); // Default collection
   const scrollViewRef = useRef(null);
   const router = useRouter();
 
   const toggleModal = () => {
     setIsModalVisible((prev) => !prev); // Otvara ili zatvara modal
+  };
+  const handleOptionSelect = (option) => {
+    setCollectionName(option); // Ažurira trenutno izabranu kolekciju
+    toggleModal(); // Zatvara modal
   };
 
   const handleStopRecordingAndUpload = async () => {
@@ -44,7 +49,7 @@ const firstPage = () => {
     ]);
 
     const currentQuestionIndex = chatHistory.length;
-    const collectionName = "Dental"; // Dodajte naziv kolekcije
+    // const collectionName = "Dental"; // Dodajte naziv kolekcije
 
     try {
       setIsHolding(false);
@@ -167,7 +172,8 @@ const firstPage = () => {
         <ModalComponent
           visible={isModalVisible}
           onClose={toggleModal}
-        ></ModalComponent>
+          onSelectOption={handleOptionSelect} // Prosleđujemo izabranu opciju
+        />
 
         {/* Buttons section */}
         <View style={firstPageStyles.buttonsSection}>
@@ -204,7 +210,16 @@ const firstPage = () => {
 
             {!isHolding && (
               <TouchableOpacity
-                onPress={() => router.push("/(secondPage)/textToText")}
+                onPress={() => {
+                  if (!collectionName) {
+                    console.error("collectionName nije definisan!");
+                    return;
+                  }
+                  router.push({
+                    pathname: "/(secondPage)/textToText",
+                    params: { collectionName }, // Prosleđujemo collectionName
+                  });
+                }}
                 disabled={loading}
               >
                 <ChatButton />

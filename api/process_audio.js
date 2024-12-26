@@ -72,7 +72,6 @@ export const sendFileNameToBackend = async (fileName, collectionName) => {
     };
   } catch (error) {
     // Alert za hvatanje grešaka tokom procesa
-    Alert.alert("Greška", error.message || "Došlo je do greške tokom obrade.");
     throw error;
   }
 };

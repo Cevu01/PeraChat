@@ -4,7 +4,7 @@
     "slug": "PeraChat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/logoIcon.png",
     "scheme": "perachat",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

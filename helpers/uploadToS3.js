@@ -31,6 +31,6 @@ export const uploadToS3 = async (uri, fileName) => {
     }
     return response.body.postResponse.location; // URL otpremljenog fajla
   } catch (error) {
-    alert("Greška pri otpremanju na S3:", error);
+    alert("Proverite interenet konekciju:", error);
   }
 };

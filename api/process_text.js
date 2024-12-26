@@ -25,7 +25,6 @@ export const processText = async (text, collectionName) => {
     return data;
   } catch (error) {
     // Alert za greške tokom fetchovanja
-    alert("Greška pri fetchovanju: " + error.message);
     throw error; // Propagiranje greške za dalju obradu
   }
 };

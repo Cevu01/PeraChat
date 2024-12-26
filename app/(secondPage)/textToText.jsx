@@ -18,6 +18,7 @@ import LottieView from "lottie-react-native";
 import { statusColor } from "../../colors";
 import secondPageStyles from "../../styles/secondPageStyles";
 import { processText } from "../../api/process_text";
+import { useLocalSearchParams } from "expo-router";
 
 const TextToSpeach = () => {
   const [userInput, setUserInput] = useState("");
@@ -25,6 +26,7 @@ const TextToSpeach = () => {
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef(null);
   const router = useRouter();
+  const { collectionName } = useLocalSearchParams();
 
   const handleSendMessage = async () => {
     if (!userInput.trim()) {
@@ -42,7 +44,7 @@ const TextToSpeach = () => {
     ]);
 
     const currentQuestionIndex = chatHistory.length;
-    const collectionName = "Dental"; // Dodajte naziv kolekcije
+    // const collectionName = "Dental"; // Dodajte naziv kolekcije
 
     try {
       // Slanje poruke na backend
