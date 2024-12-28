@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "PeraChat",
-    "slug": "PeraChat",
+    "name": "ChatBot",
+    "slug": "ChatBot",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logoIcon.png",
-    "scheme": "perachat",
+    "scheme": "chatbot",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -43,7 +43,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "6c82e610-b5b4-4a54-b477-4361def83f70"
+        "projectId": "67ed5747-4153-4f27-95b7-a24da5c40b50"
       }
     }
   }

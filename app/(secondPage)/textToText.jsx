@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   SafeAreaView,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Keyboard,
+  BackHandler,
 } from "react-native";
 import GradientBackground from "../../components/GradientBackground";
 import ChatbotBox from "../../components/ChatbotBox";
@@ -19,14 +20,28 @@ import { statusColor } from "../../colors";
 import secondPageStyles from "../../styles/secondPageStyles";
 import { processText } from "../../api/process_text";
 import { useLocalSearchParams } from "expo-router";
+import { ChatContext } from "../../state/ChatContext";
 
 const TextToSpeach = () => {
   const [userInput, setUserInput] = useState("");
-  const [chatHistory, setChatHistory] = useState([]);
+  const { chatHistory, setChatHistory } = useContext(ChatContext);
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef(null);
   const router = useRouter();
   const { collectionName } = useLocalSearchParams();
+  useEffect(() => {
+    const backAction = () => {
+      router.push("/firstPage"); // Navigate back to FirstPage
+      return true; // Prevent default back behavior
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // Cleanup the listener
+  }, []);
 
   const handleSendMessage = async () => {
     if (!userInput.trim()) {

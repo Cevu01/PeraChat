@@ -2,6 +2,9 @@ import { StyleSheet } from "react-native";
 import React, { useEffect } from "react";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
+import { ChatProvider } from "../state/ChatContext";
+import { AudioProvider } from "../state/AudioContext";
+import { SelectedOptionProvider } from "../state/SelectedOptionContext";
 SplashScreen.preventAutoHideAsync();
 
 const RootLayout = () => {
@@ -17,10 +20,19 @@ const RootLayout = () => {
 
   if (!fontsLoaded && !error) return null;
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(secondPage)" options={{ headerShown: false }} />
-    </Stack>
+    <SelectedOptionProvider>
+      <AudioProvider>
+        <ChatProvider>
+          <Stack screenOptions={{ headerShown: false, animation: "none" }}>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="(secondPage)"
+              options={{ headerShown: false }}
+            />
+          </Stack>
+        </ChatProvider>
+      </AudioProvider>
+    </SelectedOptionProvider>
   );
 };
 

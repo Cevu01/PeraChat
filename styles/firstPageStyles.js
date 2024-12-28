@@ -90,6 +90,18 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
   },
+  stopAudioContainer: {
+    position: "absolute",
+    bottom: 40,
+  },
+  stopAudio: {
+    color: "#FBFBFB",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "#30303B",
+    borderRadius: 8,
+    fontFamily: "Poppins Regular",
+  },
 });
 
 export default styles;

@@ -1,10 +1,20 @@
-import React, { useState } from "react";
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useContext } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+} from "react-native";
 import GradientBackground from "./GradientBackground";
+import { SelectedOptionContext } from "../state/SelectedOptionContext";
 
 const ModalComponent = ({ visible, onClose, onSelectOption }) => {
-  const options = ["Dental", "main-app", "Business", "Law"];
-  const [selectedOption, setSelectedOption] = useState("Dental"); // Čuva trenutno selektovanu opciju
+  const options = ["Dental", "Abdominal", "Business", "Law"];
+  const { selectedOption, setSelectedOption } = useContext(
+    SelectedOptionContext
+  );
 
   const handleOptionPress = (option) => {
     setSelectedOption(option); // Ažuriramo trenutno selektovanu opciju
@@ -18,35 +28,37 @@ const ModalComponent = ({ visible, onClose, onSelectOption }) => {
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Izaberi bazu</Text>
-          {options.map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.option,
-                selectedOption === option && styles.selectedOption, // Primeni stil ako je selektovana
-              ]}
-              onPress={() => handleOptionPress(option)}
-            >
-              <Text
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Izaberi bazu</Text>
+            {options.map((option) => (
+              <TouchableOpacity
+                key={option}
                 style={[
-                  styles.modalText,
-                  selectedOption === option && styles.selectedText, // Promena stila teksta
+                  styles.option,
+                  selectedOption === option && styles.selectedOption, // Primeni stil ako je selektovana
                 ]}
+                onPress={() => handleOptionPress(option)}
               >
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-          <GradientBackground style={styles.closeButton}>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </GradientBackground>
+                <Text
+                  style={[
+                    styles.modalText,
+                    selectedOption === option && styles.selectedText, // Promena stila teksta
+                  ]}
+                >
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <GradientBackground style={styles.closeButton}>
+              <TouchableOpacity onPress={onClose}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </GradientBackground>
+          </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -67,9 +79,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalTitle: {
-    fontSize: 28,
+    fontSize: 26,
     marginBottom: 20,
-    fontFamily: "Poppins Regular",
+    fontFamily: "Poppins Medium",
     color: "#FBFBFB",
   },
   option: {
@@ -78,15 +90,15 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 10,
     backgroundColor: "#26262E",
-    alignItems: "center",
   },
   modalText: {
     fontFamily: "Poppins Regular",
-    color: "#FBFBFB",
+    color: "#B0B0B0",
+    fontSize: 12,
   },
   selectedOption: {
     borderWidth: 1, // Dodajemo border
-    borderColor: "#fbfbfbd1", // Boja bordera
+    borderColor: "#4CB8C4", // Boja bordera
   },
   selectedText: {
     color: "#FBFBFB", // Boja teksta za selektovanu opciju
@@ -95,13 +107,14 @@ const styles = StyleSheet.create({
     padding: 10,
     width: "80%",
     borderRadius: 5,
-    marginTop: 10,
+    marginTop: 40,
     marginRight: 94,
   },
   closeButtonText: {
     color: "white",
     textAlign: "center",
     fontFamily: "Poppins Regular",
+    fontSize: 12,
   },
 });
 

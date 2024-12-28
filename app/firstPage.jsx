@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useContext } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   SafeAreaView,
@@ -6,6 +6,8 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  BackHandler,
+  Alert,
 } from "react-native";
 import MicButton from "../assets/svg/MicButton";
 import SettingsButton from "../assets/svg/SettingsButton";
@@ -21,25 +23,71 @@ import { uploadToS3 } from "../helpers/uploadToS3";
 import { sendFileNameToBackend } from "../api/process_audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import firstPageStyles from "../styles/firstPageStyles";
-import { playAudio } from "../helpers/playAudio";
 import ModalComponent from "../components/ModalComponent";
+import { Audio } from "expo-av";
+import { AudioContext } from "../state/AudioContext";
 
-const firstPage = () => {
+const playAudio = async (fileUri, setSoundInstance) => {
+  try {
+    const { sound } = await Audio.Sound.createAsync({ uri: fileUri });
+
+    // Listen for playback status updates
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.didJustFinish) {
+        setSoundInstance(null); // Clear the sound instance when playback ends
+      }
+    });
+
+    await sound.playAsync();
+    setSoundInstance(sound); // Save the sound instance for later control
+    return sound;
+  } catch (error) {
+    alert("Greška pri reprodukciji audio fajla:", error.message);
+  }
+};
+
+const FirstPage = () => {
   const [isHolding, setIsHolding] = useState(false);
+  const [soundInstance, setSoundInstance] = useState(null);
   const { startRecording, stopRecording } = useRecording();
-  const [chatHistory, setChatHistory] = useState([]);
+  const { chatHistory, setChatHistory } = useContext(AudioContext);
   const [loading, setLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false); // State za modal
-  const [collectionName, setCollectionName] = useState("Dental"); // Default collection
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [collectionName, setCollectionName] = useState("Dental");
   const scrollViewRef = useRef(null);
   const router = useRouter();
 
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert("Exit App", "Do you want to exit the application?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Exit", onPress: () => BackHandler.exitApp() },
+      ]);
+      return true; // Prevent default back behavior
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // Cleanup the listener
+  }, []);
+
   const toggleModal = () => {
-    setIsModalVisible((prev) => !prev); // Otvara ili zatvara modal
+    setIsModalVisible((prev) => !prev);
   };
+
   const handleOptionSelect = (option) => {
-    setCollectionName(option); // Ažurira trenutno izabranu kolekciju
-    toggleModal(); // Zatvara modal
+    setCollectionName(option);
+    toggleModal();
+  };
+
+  const handleStopAudio = async () => {
+    if (soundInstance) {
+      await soundInstance.stopAsync();
+      setSoundInstance(null);
+    }
   };
 
   const handleStopRecordingAndUpload = async () => {
@@ -47,14 +95,11 @@ const firstPage = () => {
       ...prevHistory,
       { question: null, answer: null },
     ]);
-
     const currentQuestionIndex = chatHistory.length;
-    // const collectionName = "Dental"; // Dodajte naziv kolekcije
 
     try {
       setIsHolding(false);
       setLoading(true);
-
       const uri = await stopRecording();
       if (!uri) {
         alert("Greška", "Snimanje nije uspelo. Pokušajte ponovo.");
@@ -63,7 +108,6 @@ const firstPage = () => {
 
       let fileCounter = await AsyncStorage.getItem("fileCounter");
       fileCounter = fileCounter ? parseInt(fileCounter, 10) : 1;
-
       const fileName = `${fileCounter}.3gp`;
       await AsyncStorage.setItem("fileCounter", (fileCounter + 1).toString());
 
@@ -74,7 +118,6 @@ const firstPage = () => {
       }
 
       const extractedFileName = s3Url.split("/").pop();
-
       const { transcription, answer, audioFileUri } =
         await sendFileNameToBackend(extractedFileName, collectionName);
 
@@ -86,7 +129,7 @@ const firstPage = () => {
         return;
       }
 
-      // Ažuriranje chat istorije
+      // Update chat history
       setChatHistory((prevHistory) => {
         const updatedHistory = [...prevHistory];
         updatedHistory[currentQuestionIndex] = {
@@ -96,10 +139,10 @@ const firstPage = () => {
         return updatedHistory;
       });
 
-      // Odmah pusti audio fajl nakon što se prikaže tekst
+      // Play audio file after displaying text
       if (audioFileUri) {
         try {
-          await playAudio(audioFileUri);
+          await playAudio(audioFileUri, setSoundInstance);
         } catch (playError) {
           alert(
             "Greška",
@@ -127,7 +170,6 @@ const firstPage = () => {
     <>
       <StatusBar backgroundColor={statusColor} barStyle="light-content" />
       <SafeAreaView style={firstPageStyles.container}>
-        {/* Chat history section */}
         <View style={firstPageStyles.chatContainer}>
           <ScrollView style={firstPageStyles.scrollView} ref={scrollViewRef}>
             <View style={firstPageStyles.botMessageContainer}>
@@ -172,7 +214,7 @@ const firstPage = () => {
         <ModalComponent
           visible={isModalVisible}
           onClose={toggleModal}
-          onSelectOption={handleOptionSelect} // Prosleđujemo izabranu opciju
+          onSelectOption={handleOptionSelect}
         />
 
         {/* Buttons section */}
@@ -183,13 +225,12 @@ const firstPage = () => {
                 <SettingsButton />
               </TouchableOpacity>
             )}
-
             <TouchableOpacity
               onPressIn={() => {
                 setIsHolding(true);
-                startRecording(); // Početak snimanja
+                startRecording(); // Start recording
               }}
-              onPressOut={handleStopRecordingAndUpload} // Kraj snimanja i otpremanje
+              onPressOut={handleStopRecordingAndUpload} // Stop recording and upload
               activeOpacity={1}
               disabled={loading}
             >
@@ -207,7 +248,6 @@ const firstPage = () => {
                 )}
               </View>
             </TouchableOpacity>
-
             {!isHolding && (
               <TouchableOpacity
                 onPress={() => {
@@ -217,7 +257,7 @@ const firstPage = () => {
                   }
                   router.push({
                     pathname: "/(secondPage)/textToText",
-                    params: { collectionName }, // Prosleđujemo collectionName
+                    params: { collectionName },
                   });
                 }}
                 disabled={loading}
@@ -226,10 +266,23 @@ const firstPage = () => {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Stop Audio Button */}
+          {soundInstance && (
+            <View style={firstPageStyles.stopAudioContainer}>
+              <TouchableOpacity
+                onPress={handleStopAudio}
+                disabled={!soundInstance}
+              >
+                <Text style={firstPageStyles.stopAudio}>Stop Audio</Text>
+                {/* Button to stop audio */}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </>
   );
 };
 
-export default firstPage;
+export default FirstPage;
