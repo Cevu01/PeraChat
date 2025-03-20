@@ -2,10 +2,37 @@ import { Buffer } from "buffer";
 import * as FileSystem from "expo-file-system";
 import { Alert } from "react-native";
 
+/**
+ * Pomoćna funkcija za ponavljanje fetch zahteva u slučaju privremenih grešaka
+ */
+const fetchWithRetry = async (url, options, retries = 5, delay = 3000) => {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok) {
+        return response;
+      } else if (response.status === 503) {
+        console.warn(`API nedostupan (${url}), čekam ${delay / 1000}s...`);
+        await new Promise((resolve) => setTimeout(resolve, delay)); // Sačekaj pre ponovnog pokušaja
+      } else {
+        throw new Error(
+          `HTTP greška: ${response.status} - ${response.statusText}`
+        );
+      }
+    } catch (error) {
+      if (attempt === retries - 1) throw error; // Ako je poslednji pokušaj, propagiraj grešku
+    }
+  }
+  throw new Error(`API nije dostupan nakon ${retries} pokušaja: ${url}`);
+};
+
+/**
+ * Funkcija koja šalje ime fajla backendu i obrađuje audio
+ */
 export const sendFileNameToBackend = async (fileName, collectionName) => {
   try {
     // Prvi POST zahtev na backend za obradu audio fajla
-    const response = await fetch(
+    const response = await fetchWithRetry(
       "https://x4661ug1wj.execute-api.us-west-2.amazonaws.com/process_audio",
       {
         method: "POST",
@@ -19,18 +46,12 @@ export const sendFileNameToBackend = async (fileName, collectionName) => {
       }
     );
 
-    if (!response.ok) {
-      const errorMessage = `Greška kod /process_audio: ${response.statusText}`;
-      Alert.alert("Greška", errorMessage); // Alert za grešku
-      throw new Error(errorMessage);
-    }
-
     // Parsiranje JSON odgovora
     const jsonResponse = await response.json();
     const { transcription, answer } = jsonResponse;
 
     // Drugi POST zahtev ka drugom endpointu
-    const secondResponse = await fetch(
+    const secondResponse = await fetchWithRetry(
       "https://x4661ug1wj.execute-api.us-west-2.amazonaws.com/convert_text_to_audio",
       {
         method: "POST",
@@ -43,12 +64,6 @@ export const sendFileNameToBackend = async (fileName, collectionName) => {
         }),
       }
     );
-
-    if (!secondResponse.ok) {
-      const errorMessage = `Greška kod /convert_text_to_audio: ${secondResponse.statusText}`;
-      Alert.alert("Greška", errorMessage); // Alert za grešku
-      throw new Error(errorMessage);
-    }
 
     // Dohvatanje binarnih podataka iz drugog endpointa
     const arrayBuffer = await secondResponse.arrayBuffer();
@@ -71,7 +86,7 @@ export const sendFileNameToBackend = async (fileName, collectionName) => {
       audioFileUri,
     };
   } catch (error) {
-    // Alert za hvatanje grešaka tokom procesa
+    Alert.alert("Greška", error.message);
     throw error;
   }
 };

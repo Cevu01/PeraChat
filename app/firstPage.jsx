@@ -53,7 +53,7 @@ const FirstPage = () => {
   const { chatHistory, setChatHistory } = useContext(AudioContext);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [collectionName, setCollectionName] = useState("Dental");
+  const [collectionName, setCollectionName] = useState("Law");
   const scrollViewRef = useRef(null);
   const router = useRouter();
 

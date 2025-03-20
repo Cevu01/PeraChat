@@ -11,7 +11,7 @@ import GradientBackground from "./GradientBackground";
 import { SelectedOptionContext } from "../state/SelectedOptionContext";
 
 const ModalComponent = ({ visible, onClose, onSelectOption }) => {
-  const options = ["Dental", "Abdominal", "Business", "Law"];
+  const options = ["Law"];
   const { selectedOption, setSelectedOption } = useContext(
     SelectedOptionContext
   );

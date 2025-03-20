@@ -29,6 +29,7 @@ const TextToSpeach = () => {
   const scrollViewRef = useRef(null);
   const router = useRouter();
   const { collectionName } = useLocalSearchParams();
+
   useEffect(() => {
     const backAction = () => {
       router.push("/firstPage"); // Navigate back to FirstPage
@@ -63,7 +64,7 @@ const TextToSpeach = () => {
 
     try {
       // Slanje poruke na backend
-      const data = await processText(userInput, collectionName); // Prosleđivanje oba parametra
+      const data = await processText(userInput, "Law"); // Prosleđivanje oba parametra
 
       if (!data || !data.answer) {
         Alert.alert(
